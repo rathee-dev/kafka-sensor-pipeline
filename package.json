@@ -1,0 +1,38 @@
+{
+  "name": "kafka-sensor-pipeline",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Event-driven IoT telemetry pipeline on Kafka: keyed sensor events are published to a partitioned topic and consumed by a horizontally scalable consumer group that aggregates readings, detects anomalies and dead-letters poison messages.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.9"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/producer.js",
+    "consume": "node --env-file-if-exists=.env src/consumer.js",
+    "topics": "node --env-file-if-exists=.env scripts/create-topics.js",
+    "demo": "bash scripts/demo.sh",
+    "test": "node --test \"test/unit/*.test.js\" \"test/integration/*.test.js\"",
+    "test:unit": "node --test \"test/unit/*.test.js\"",
+    "test:integration": "node --test \"test/integration/*.test.js\"",
+    "lint": "eslint .",
+    "check": "npm run lint && npm run test:unit",
+    "ci": "npm run check && npm run test:integration"
+  },
+  "keywords": [
+    "kafka",
+    "kafkajs",
+    "event-driven",
+    "iot",
+    "streaming"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "kafkajs": "^2.2.4"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "eslint": "^9.13.0",
+    "globals": "^15.11.0"
+  }
+}

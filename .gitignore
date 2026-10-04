@@ -1,0 +1,14 @@
+node_modules/
+output/
+coverage/
+
+# Secrets: never commit real broker credentials
+.env
+.env.local
+.env.*.local
+
+*.log
+npm-debug.log*
+.DS_Store
+.idea/
+.vscode/
