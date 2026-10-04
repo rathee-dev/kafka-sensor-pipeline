@@ -6,7 +6,7 @@
 #   KAFKA_BROKERS=localhost:9092 KAFKA_SSL=false npm run demo
 services:
   kafka:
-    image: apache/kafka:3.9.0
+    image: apache/kafka:3.9.1
     container_name: sensor-kafka
     ports:
       - '9092:9092'

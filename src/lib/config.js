@@ -36,6 +36,7 @@ export const DEFAULTS = Object.freeze({
   consumerIdleTimeoutMs: 0,
   outputDir: 'output',
   logLevel: 'info',
+  continuous: false,
 });
 
 const KEY_MODES = ['sensor', 'roundrobin', 'random'];
@@ -182,6 +183,7 @@ export function loadConfig(env = process.env) {
     ),
     outputDir: env.OUTPUT_DIR || DEFAULTS.outputDir,
     logLevel: (env.LOG_LEVEL || DEFAULTS.logLevel).toLowerCase(),
+    continuous: parseBoolean(env.CONTINUOUS, DEFAULTS.continuous),
   };
 }
 

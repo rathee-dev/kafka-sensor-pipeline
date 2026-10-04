@@ -152,6 +152,12 @@ export class SensorConsumer {
         event,
       });
 
+      this.logger.info(
+        `[consumer] 📥 received ${event.sensorId} (seq ${event.sequence}): ` +
+          `temp=${event.temperatureC}°C, vib=${event.vibrationMmS}mm/s ` +
+          `[partition ${batch.partition}, offset ${message.offset}]`,
+      );
+
       if (result.anomaly) {
         outcomes.anomalies += 1;
         await this.publishAnomaly(result.anomaly, event);

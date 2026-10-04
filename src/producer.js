@@ -10,7 +10,7 @@ import { pathToFileURL } from 'node:url';
 
 import { Partitioners } from 'kafkajs';
 import { loadConfig, redactedConfigSummary } from './lib/config.js';
-import { buildEventStream, messageKeyFor, createRandom } from './lib/events.js';
+import { buildEventStream, messageKeyFor, createRandom, makeSensorEvent } from './lib/events.js';
 import { createKafka } from './lib/kafka.js';
 import { createLogger } from './lib/logger.js';
 
@@ -74,9 +74,13 @@ export class SensorProducer {
     return { sent: messages.length, failed: 0 };
   }
 
-  /** Generates the whole run and publishes it batch-by-batch. */
+  /** Generates the whole run and publishes it batch-by-batch (or continuously). */
   async run() {
     const runId = new Date().toISOString().replace(/[:.]/g, '-');
+    if (this.config.continuous) {
+      return this.runContinuous(runId);
+    }
+
     const stream = buildEventStream({
       sensorCount: this.config.sensorCount,
       readingsPerSensor: this.config.readingsPerSensor,
@@ -94,10 +98,70 @@ export class SensorProducer {
     for (let index = 0; index < stream.length; index += batchSize) {
       const batch = stream.slice(index, index + batchSize);
       await this.publish(batch);
+      for (const ev of batch) {
+        this.logger.info(
+          `[producer] 🚀 sent ${ev.sensorId} (seq ${ev.sequence}): temp=${ev.temperatureC}°C, vib=${ev.vibrationMmS}mm/s`,
+        );
+      }
       if (this.config.publishIntervalMs > 0) await sleep(this.config.publishIntervalMs);
     }
 
     this.logger.info(`publish complete: ${this.sent} sent, ${this.failed} failed`);
+    return { sent: this.sent, failed: this.failed };
+  }
+
+  /** Streams mock sensor readings continuously until SIGINT/SIGTERM. */
+  async runContinuous(runId) {
+    this.logger.info(
+      `Starting continuous streaming from ${this.config.sensorCount} sensor(s) ` +
+        `to "${this.config.topic}" (interval: ${this.config.publishIntervalMs || 1000}ms). Press Ctrl+C to stop.`,
+    );
+
+    let sequence = 1;
+    let stopping = false;
+    const onSignal = () => { stopping = true; };
+    process.once('SIGINT', onSignal);
+    process.once('SIGTERM', onSignal);
+
+    const random = createRandom(this.config.eventSeed);
+
+    while (!stopping) {
+      const timestampMs = Date.now();
+      const batch = [];
+      for (let sIdx = 0; sIdx < this.config.sensorCount; sIdx++) {
+        const sensorId = `sensor-${String(sIdx + 1).padStart(2, '0')}`;
+        const spiking = sIdx === 0 && sequence % 8 === 0;
+        const baseTemp = 21.5 + (random() - 0.5) * 3;
+        const temperatureC = spiking ? 85 + random() * 9 : baseTemp;
+        const vibrationMmS = spiking ? 6 + random() * 2 : 0.05 + random() * 0.4;
+        batch.push(
+          makeSensorEvent({
+            sensorId,
+            rackId: `rack-${String.fromCharCode(65 + sIdx)}`,
+            sequence,
+            timestampMs,
+            temperatureC,
+            humidityPct: 45 + random() * 10,
+            vibrationMmS,
+            runId,
+          }),
+        );
+      }
+      sequence++;
+      await this.publish(batch);
+      for (const ev of batch) {
+        this.logger.info(
+          `[producer] 🚀 sent ${ev.sensorId} (seq ${ev.sequence}): temp=${ev.temperatureC}°C, vib=${ev.vibrationMmS}mm/s`,
+        );
+      }
+      if (this.config.publishIntervalMs > 0 && !stopping) {
+        await sleep(this.config.publishIntervalMs);
+      }
+    }
+
+    process.off('SIGINT', onSignal);
+    process.off('SIGTERM', onSignal);
+    this.logger.info(`stream stopped: ${this.sent} sent, ${this.failed} failed`);
     return { sent: this.sent, failed: this.failed };
   }
 
