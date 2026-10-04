@@ -93,6 +93,13 @@ jobs:
           KAFKA_SSL: 'false'
           LOG_LEVEL: warn
 
+      - name: Run pipeline to generate summary artefacts
+        run: npm run demo
+        env:
+          KAFKA_BROKERS: localhost:9092
+          KAFKA_SSL: 'false'
+          CONSUMER_IDLE_TIMEOUT_MS: '4000'
+
       - name: Upload pipeline artefacts
         if: always()
         uses: actions/upload-artifact@v4
