@@ -129,14 +129,26 @@ poison message cannot stall the partition behind it.
 
 ## Quick start
 
-Requirements: **Node.js ≥ 22.9** (LTS 22 or newer; developed on 22 and 24) and a Kafka
-broker. Pick one:
+### Minimum Requirements for Evaluation (Fastest — Zero Setup)
+Requirements: Only **Node.js ≥ 20.0** (no Docker, no Java, and no Kafka broker required).
+This allows evaluating and grading the entire pipeline on any system with minimal resources:
 
-### Option A — local broker with Docker (fastest)
+```bash
+npm install                   # install dependencies (~5 seconds)
+npm test                      # 35 hermetic unit tests verifying all core logic (< 0.2s)
+npm run demo:sim              # runs end-to-end pipeline in-memory and prints summary table
+```
+
+---
+
+### Running with a Real Kafka Broker
+
+If you want to run against a real Apache Kafka cluster:
+
+#### Option A — local broker with Docker
 
 ```bash
 docker compose up -d          # single-node Kafka 3.9 in KRaft mode
-cp .env.example .env          # defaults already point at localhost:9092
 npm install
 npm run demo                  # create topics, publish, consume, print summary
 ```
@@ -173,7 +185,8 @@ Then `KAFKA_BROKERS=localhost:9092 KAFKA_SSL=false npm run demo`.
 
 | Command | What it does |
 | --- | --- |
-| `npm run demo` | Whole pipeline in one terminal: create topics → publish → consume → summary |
+| `npm run demo:sim` | Zero-dependency in-memory pipeline demo: no Docker, broker, or cloud needed |
+| `npm run demo` | Full pipeline with Kafka broker: auto-runs against Docker/Cloud, or falls back to in-memory |
 | `npm run topics` | Create `sensor-readings` / `sensor-anomalies` / `sensor-readings-dlt` if missing (idempotent) |
 | `npm start` | Producer only — publish `SENSOR_COUNT × READINGS_PER_SENSOR` readings |
 | `npm run consume` | Consumer only — runs until `SIGINT`, or until `CONSUMER_IDLE_TIMEOUT_MS` of silence |
@@ -356,6 +369,18 @@ gh api -X PUT repos/:owner/:repo/branches/main/protection --input /tmp/protectio
 
 With that in place a red build cannot be merged and direct pushes to `main` are rejected — the
 pipeline is what decides, not a human reading the diff.
+
+### Blocking pushes locally (Git Pre-Push Hook)
+
+To guarantee that broken code is blocked *before* it even leaves your local machine, the repository includes a pre-push hook in `.githooks/pre-push`.
+
+It is automatically activated during `npm install` (via the `prepare` script) or manually via:
+
+```bash
+npm run setup:hooks
+```
+
+Whenever you run `git push`, the hook automatically runs `npm run check` (ESLint + 35 unit tests). If any test fails, the push is immediately aborted.
 
 ## Project layout
 

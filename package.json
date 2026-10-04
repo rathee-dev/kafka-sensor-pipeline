@@ -12,12 +12,15 @@
     "consume": "node --env-file-if-exists=.env src/consumer.js",
     "topics": "node --env-file-if-exists=.env scripts/create-topics.js",
     "demo": "bash scripts/demo.sh",
+    "demo:sim": "node scripts/demo-simulated.js",
     "test": "node --test \"test/unit/*.test.js\" \"test/integration/*.test.js\"",
     "test:unit": "node --test \"test/unit/*.test.js\"",
     "test:integration": "node --test \"test/integration/*.test.js\"",
     "lint": "eslint .",
     "check": "npm run lint && npm run test:unit",
-    "ci": "npm run check && npm run test:integration"
+    "ci": "npm run check && npm run test:integration",
+    "setup:hooks": "git config core.hooksPath .githooks && chmod +x .githooks/pre-push",
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true"
   },
   "keywords": [
     "kafka",

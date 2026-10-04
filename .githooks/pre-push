@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Git pre-push hook: blocks 'git push' if unit tests or linter fail.
+set -e
+
+echo "========================================================"
+echo "==> [pre-push hook] Running lint & unit test suite..."
+echo "========================================================"
+
+npm run check
+
+echo "==> [pre-push hook] All checks passed! Proceeding with push."
