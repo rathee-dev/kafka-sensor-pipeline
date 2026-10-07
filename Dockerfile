@@ -1,15 +1,16 @@
 # Use lightweight Node.js LTS image
 FROM node:22-alpine
 
-# Set working directory
+# Set working directory and ensure write permissions for the node user
 WORKDIR /app
+RUN mkdir -p /app/output && chown -R node:node /app
 
-# Install dependencies
-COPY package*.json ./
+# Install dependencies with correct ownership
+COPY --chown=node:node package*.json ./
 RUN npm ci
 
-# Copy application source code
-COPY . .
+# Copy application source code with correct ownership
+COPY --chown=node:node . .
 
 # Ensure non-root execution for security
 USER node
